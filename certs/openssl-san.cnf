@@ -1,0 +1,24 @@
+[req]
+default_bits = 4096
+distinguished_name = req_distinguished_name
+x509_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+C = US
+ST = Local
+L = Local
+O = Example Homelab
+CN = 192.168.1.X
+
+[v3_req]
+subjectAltName = @alt_names
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+basicConstraints = CA:FALSE
+
+[alt_names]
+DNS.1 = localhost
+DNS.2 = your-hostname
+IP.1 = 127.0.0.1
+IP.2 = 192.168.1.X

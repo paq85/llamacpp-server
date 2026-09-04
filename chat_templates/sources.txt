@@ -1,0 +1,6 @@
+- https://huggingface.co/froggeric/Qwen-Fixed-Chat-Templates/raw/main/chat_template.jinja
+  (unified Qwen template, v22.1 — covers Qwen 3.5/3.6/3.8; supersedes the old
+  qwen3.6-chat_template.jinja which moved to archive/)
+
+NOTE: Since Qwen 3.8 27B, this template fix is no longer strictly needed —
+the model's built-in template handles tool calls correctly. Kept "just in case."

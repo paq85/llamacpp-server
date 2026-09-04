@@ -1,0 +1,19 @@
+services:
+  cloudflared:
+    image: ${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:2026.2.0}
+    container_name: ${CLOUDFLARED_CONTAINER_NAME:-paq-llamacpp-server-cloudflared}
+    user: "0:0"
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: ${CLOUDFLARED_TOKEN_FILE:?set by run-paq-llamacpp-server.sh}
+        target: /etc/cloudflared/tunnel-token
+        read_only: true
+    command: >-
+      tunnel
+      --no-autoupdate
+      --protocol ${CLOUDFLARED_PROTOCOL:-auto}
+      --loglevel ${CLOUDFLARED_LOGLEVEL:-info}
+      run
+      --token-file /etc/cloudflared/tunnel-token

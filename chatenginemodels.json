@@ -1,0 +1,40 @@
+[
+    {
+        "name": "16GBVRAM",
+        "vendor": "customendpoint",
+        "apiType": "chat-completions",
+        "models": [
+            {
+                "id": "RERND",
+                "name": "Qwen 3.8 27b (RTX4070)",
+                "url": "https://your-llm-host.example/v1",
+                "streaming": true,
+                "toolCalling": true,
+                "vision": true,
+                "maxInputTokens": 70000,
+                "maxOutputTokens": 30000,
+                "contextWindow": 100000
+            }
+        ],
+        "apiKey": "${input:chat.lm.secret.-64847427}"
+    },
+    {
+        "name": "32GBVRAM",
+        "vendor": "customendpoint",
+        "apiKey": "${input:chat.lm.secret.-64847427}",
+        "apiType": "chat-completions",
+        "models": [
+            {
+                "id": "RERND",
+                "name": "Qwen 3.8 27b (RTX5090)",
+                "url": "https://your-llm-host.example/v1",
+                "streaming": true,
+                "toolCalling": true,
+                "vision": true,
+                "maxInputTokens": 150000,
+                "maxOutputTokens": 50000,
+                "contextWindow": 200000
+            }
+        ]
+    }
+]

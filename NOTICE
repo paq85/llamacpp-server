@@ -1,0 +1,16 @@
+llamacpp-server
+Copyright 2026 Damian Sromek
+
+This product includes software developed as a wrapper around the
+llama.cpp project (https://github.com/ggml-org/llama.cpp), which is
+distributed under its own license.
+
+Third-party components:
+
+- chat_templates/chat_template.jinja
+  Unified Qwen chat template (v22.1), derived from the work of
+  Frédéric Guigand (@froggeric), originally published at:
+  https://huggingface.co/froggeric/Qwen-Fixed-Chat-Templates
+
+  This template is provided for convenience and is subject to the
+  terms of the Apache License, Version 2.0.

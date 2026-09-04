@@ -1,0 +1,16 @@
+# Rendered by install-systemd-service.sh.
+[Unit]
+Description=Apply NVIDIA GPU power limit at boot
+After=systemd-modules-load.service display-manager.service nvidia-persistenced.service
+Wants=display-manager.service
+ConditionPathExists=/usr/bin/nvidia-smi
+
+[Service]
+Type=oneshot
+Environment=GPU_INDEX=0
+Environment=POWER_PERCENT=70
+ExecStart=@ROOT@/set-gpu-power-limit.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

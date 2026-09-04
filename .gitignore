@@ -1,0 +1,60 @@
+# Secrets and local env
+.env
+.env.*
+!.env.example
+api-keys.txt
+.cloudflared/
+
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local toolchains / package managers
+cuda-env/
+cuda-env
+mamba/
+mamba-root/
+
+# Model and HF caches
+hf-cache/
+models/*.gguf
+models/.cache/
+
+# Generated certificates / keys
+certs/*.pem
+
+# Build outputs and temp files
+build-clang-probe/
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# Embedded upstream repo (track separately in its own Git repo)
+llama.cpp/
+
+# Mainline llama.cpp build tree for the Bonsai profile (track separately)
+llama.cpp-mainline/
+
+# PrismML fork llama.cpp build tree for the Bonsai profile (track separately)
+llama.cpp-bonsai/
+
+# Local caches in tracked config dirs
+paq-llamacpp-server-base-meta/.cache/
+
+# Cost tracking CSV logs
+cost-logs/
+
+# Captured client request payloads (may contain private code/prompts) and
+# tool-call stress/repro artifacts.
+captures/
+benchmarks/
+
+# Runtime lock file
+.run-paq-llamacpp-server.lock

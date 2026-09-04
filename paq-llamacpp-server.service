@@ -1,0 +1,29 @@
+# Rendered by install-systemd-service.sh.
+[Unit]
+Description=llama.cpp PAQ_LLAMACPP_SERVER model server
+Documentation=file://@ROOT@/README.md
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=3
+ConditionPathExists=@ROOT@/run-paq-llamacpp-server.sh
+ConditionPathExists=@ROOT@/llama.cpp/build/bin/llama-server
+
+[Service]
+Type=simple
+User=@RUN_USER@
+Group=@RUN_GROUP@
+WorkingDirectory=@ROOT@
+Environment=HOME=@RUN_HOME@
+Environment=PYTHONUNBUFFERED=1
+Environment=PAQ_LLAMACPP_SERVER_ENV_FILE=@ROOT@/dot.env.qwen38-27b-q5kxl-200k-32gb
+ExecStart=@ROOT@/run-paq-llamacpp-server.sh
+Restart=on-failure
+RestartSec=20
+TimeoutStopSec=45
+LimitNOFILE=1048576
+UMask=0077
+SyslogIdentifier=paq-llamacpp-server
+
+[Install]
+WantedBy=multi-user.target
