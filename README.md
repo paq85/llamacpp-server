@@ -469,6 +469,54 @@ When TLS is enabled, both `LLAMA_SERVER_SSL_KEY_FILE` and `LLAMA_SERVER_SSL_CERT
 
 ## Optional Cloudflare Tunnel connector
 
+### Why use Cloudflare for this endpoint?
+
+Cloudflare Tunnel is useful even when the machine running `llama-server` is
+not exposed directly to the Internet. In particular, it is a good fit when:
+
+- your ISP does not provide a public IPv4 address
+- your server is behind carrier-grade NAT, a home router, or a restrictive firewall
+- you do not want to open or forward an inbound port to the GPU machine
+- you want a stable HTTPS hostname instead of a changing home or office IP
+- you want Cloudflare's edge, Zero Trust, and security controls in front of an
+  otherwise private inference service
+
+The connector creates an outbound connection from the host to Cloudflare. A
+request can therefore reach the local service without port forwarding or a
+publicly routable origin IP. The origin can remain bound to the local host (or
+to Docker Desktop's host gateway), while the public hostname is handled at the
+Cloudflare edge.
+
+Cloudflare also gives you a useful security boundary for a powerful API
+endpoint:
+
+- **Cloudflare Access / Zero Trust policies** can require identity, a specific
+  email domain, group membership, a service token, or mTLS before a request is
+  allowed through.
+- **WAF and managed rules** can block common HTTP attack patterns before they
+  reach the inference host.
+- **Rate limiting** can reduce accidental or abusive GPU consumption and help
+  protect API-key credentials from brute-force traffic.
+- **IP and country rules**, firewall policies, and hostname-specific rules can
+  narrow who can reach the endpoint.
+- **TLS at the edge**, DNS management, DDoS protection, and request analytics
+  provide operational visibility without exposing the origin address.
+
+For an automated client such as VS Code Copilot, use an authentication method
+that the client supports: the server's API key, a Cloudflare Access service
+token, or both. Do not assume that an interactive browser login will work for
+an OpenAI-compatible client. Keep `llama-server` API-key authentication enabled
+even when Cloudflare Access is configured, so the origin remains protected if
+it is ever reached through another path.
+
+At a minimum, configure the Cloudflare hostname so that it is proxied through
+Cloudflare, create a Tunnel with a remotely-managed public hostname, and point
+that hostname at the local timeout proxy (`8080`) rather than directly at the
+backend (`8081`). Then apply an Access policy or an equivalent firewall/rate
+limit policy before sharing the `/v1` URL with a client. Cloudflare is an
+additional security layer, not a replacement for API-key authentication,
+least-privilege firewall rules, or keeping secrets out of Git.
+
 When `CLOUDFLARED_TUNNEL_TOKEN` is present, `run-paq-llamacpp-server.sh` will start the `cloudflared` connector defined in `cloudflared.compose.yaml`, using Docker and the token file generated under `.cloudflared/`.
 
 This repo uses a **remotely-managed** Cloudflare Tunnel, so the public hostname and origin service are configured in the Cloudflare dashboard rather than in a local `cloudflared` YAML config.
@@ -598,10 +646,6 @@ This means Cloudflare connected to the origin but did not receive response bytes
 - enable `CLOUDFLARE_TIMEOUT_PROXY_MODE=optimistic` if your client needs non-stream JSON
 - publish a non-proxied/direct path for very long requests
 - or raise the Cloudflare proxy read timeout on an Enterprise zone
-
-## TODO
-
-- [ ] Document how to configure **Cloudflare** end-to-end (zone/hostname setup, the remotely-managed tunnel, and the proxy read-timeout behavior) as a dedicated, step-by-step section.
 
 ## License
 
