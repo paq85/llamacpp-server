@@ -142,11 +142,15 @@ details[open] summary { margin-bottom: 12px; }
 
     <div class="preset-row">
       <button class="preset-btn" id="preset4070ti">
-        <span class="gpu-name">RTX 4070 Ti Super</span><br>
-        <span class="gpu-specs">400W · 1000/50 tok/s</span>
+        <span class="gpu-name">PC with RTX 4070 Ti Super</span><br>
+        <span class="gpu-specs">500W · 1000/50 tok/s</span>
       </button>
       <button class="preset-btn" id="preset5090">
-        <span class="gpu-name">RTX 5090</span><br>
+        <span class="gpu-name">PC with RTX 5090</span><br>
+        <span class="gpu-specs">900W · 2500/120 tok/s</span>
+      </button>
+      <button class="preset-btn" id="preset5090pl">
+        <span class="gpu-name">PC with RTX 5090 (400W power limit)</span><br>
         <span class="gpu-specs">650W · 2000/100 tok/s</span>
       </button>
     </div>
@@ -460,9 +464,12 @@ details[open] summary { margin-bottom: 12px; }
     calc();
   }
   document.getElementById('preset4070ti').addEventListener('click', function() {
-    applyPreset(400, 1000, 50);
+    applyPreset(500, 1000, 50);
   });
   document.getElementById('preset5090').addEventListener('click', function() {
+    applyPreset(900, 2500, 120);
+  });
+  document.getElementById('preset5090pl').addEventListener('click', function() {
     applyPreset(650, 2000, 100);
   });
 
