@@ -116,6 +116,18 @@ details[open] summary { margin-bottom: 12px; }
   .layout { grid-template-columns: 1fr; }
   .input-row label { flex: 0 0 100px; }
 }
+.preset-row {
+  display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.preset-btn {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text); padding: 6px 12px; font-size: 0.78rem; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+}
+.preset-btn:hover { border-color: var(--accent); background: var(--bg); }
+.preset-btn .gpu-name { font-weight: 600; }
+.preset-btn .gpu-specs { color: var(--text2); font-size: 0.7rem; }
 </style>
 </head>
 <body>
@@ -127,6 +139,17 @@ details[open] summary { margin-bottom: 12px; }
   <!-- Left: Inputs -->
   <div class="panel">
     <h2>Parameters</h2>
+
+    <div class="preset-row">
+      <button class="preset-btn" id="preset4070ti">
+        <span class="gpu-name">RTX 4070 Ti Super</span><br>
+        <span class="gpu-specs">400W · 1000/50 tok/s</span>
+      </button>
+      <button class="preset-btn" id="preset5090">
+        <span class="gpu-name">RTX 5090</span><br>
+        <span class="gpu-specs">650W · 2000/100 tok/s</span>
+      </button>
+    </div>
 
     <div class="input-row">
       <label for="energyCost">Energy cost</label>
@@ -389,6 +412,23 @@ details[open] summary { margin-bottom: 12px; }
       slider.value = num.value;
       calc();
     });
+  });
+
+  // GPU presets
+  function applyPreset(power, pSpeed, dSpeed) {
+    document.getElementById('pcPower').value = power;
+    document.getElementById('pcPowerNum').value = power;
+    document.getElementById('promptSpeed').value = pSpeed;
+    document.getElementById('promptSpeedNum').value = pSpeed;
+    document.getElementById('decodeSpeed').value = dSpeed;
+    document.getElementById('decodeSpeedNum').value = dSpeed;
+    calc();
+  }
+  document.getElementById('preset4070ti').addEventListener('click', function() {
+    applyPreset(400, 1000, 50);
+  });
+  document.getElementById('preset5090').addEventListener('click', function() {
+    applyPreset(650, 2000, 100);
   });
 
   calc();
