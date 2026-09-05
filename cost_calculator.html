@@ -98,6 +98,20 @@ details[open] summary { margin-bottom: 12px; }
 .formula-block .fn { color: var(--accent); }
 .formula-block .fv { color: var(--green); }
 .note { margin-top: 10px; font-size: 0.8rem; color: var(--text2); }
+.scenario-section {
+  margin-top: 20px; background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 8px; padding: 20px;
+}
+.scenario-section h2 {
+  font-size: 1rem; color: var(--green); margin-bottom: 8px;
+}
+.scenario-section .scenario-desc {
+  font-size: 0.8rem; color: var(--text2); margin-bottom: 14px; line-height: 1.5;
+}
+.scenario-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
 @media (max-width: 800px) {
   .layout { grid-template-columns: 1fr; }
   .input-row label { flex: 0 0 100px; }
@@ -144,22 +158,29 @@ details[open] summary { margin-bottom: 12px; }
 
     <div class="input-row">
       <label for="promptTokens">Prompt tokens</label>
-      <input type="range" id="promptTokens" min="100" max="20000" step="100" value="4000">
-      <input type="number" id="promptTokensNum" title="Number of prompt tokens" min="10" max="100000" step="10" value="4000">
+      <input type="range" id="promptTokens" min="100" max="1000000" step="1000" value="60000">
+      <input type="number" id="promptTokensNum" title="Number of prompt tokens" min="10" max="1000000" step="100" value="60000">
       <span class="unit">tok</span>
     </div>
 
     <div class="input-row">
+      <label for="cachePct">Cache hit rate</label>
+      <input type="range" id="cachePct" min="0" max="100" step="1" value="83">
+      <input type="number" id="cachePctNum" title="Percentage of prompt tokens served from cache (processed at 1/100 speed)" min="0" max="100" step="1" value="83">
+      <span class="unit">%</span>
+    </div>
+
+    <div class="input-row">
       <label for="outputTokens">Output tokens</label>
-      <input type="range" id="outputTokens" min="50" max="10000" step="50" value="2000">
-      <input type="number" id="outputTokensNum" title="Number of output tokens" min="10" max="50000" step="10" value="2000">
+      <input type="range" id="outputTokens" min="50" max="1000000" step="100" value="2000">
+      <input type="number" id="outputTokensNum" title="Number of output tokens" min="10" max="1000000" step="100" value="2000">
       <span class="unit">tok</span>
     </div>
 
     <div class="input-row">
       <label for="requestsPerDay">Requests / day</label>
-      <input type="range" id="requestsPerDay" min="1" max="500" step="1" value="50">
-      <input type="number" id="requestsPerDayNum" title="Requests per day" min="1" max="10000" step="1" value="50">
+      <input type="range" id="requestsPerDay" min="1" max="50000" step="1" value="50">
+      <input type="number" id="requestsPerDayNum" title="Requests per day" min="1" max="50000" step="1" value="50">
       <span class="unit">req</span>
     </div>
   </div>
@@ -176,7 +197,7 @@ details[open] summary { margin-bottom: 12px; }
       <div class="result-card">
         <div class="label">Cost / 1M Input</div>
         <div class="value" id="resCost1MInput">$0.00</div>
-        <div class="sub">per 1,000,000 input tokens</div>
+        <div class="sub" id="resCost1MInputSub">per 1M input tokens (with cache)</div>
       </div>
       <div class="result-card">
         <div class="label">Cost / 1M Output</div>
@@ -202,21 +223,56 @@ details[open] summary { margin-bottom: 12px; }
   </div>
 </div>
 
+<!-- Realistic Scenario -->
+<div class="scenario-section">
+  <h2>🎯 Realistic Scenario</h2>
+  <div class="scenario-desc">
+    PC working <strong>90% of the day</strong> (21.6 h). Average request: <strong>60k input</strong> tokens
+    (<strong>50k cached</strong>), <strong>2k output</strong> tokens.
+    Uses your current power / energy / speed settings above.
+  </div>
+  <div class="scenario-grid">
+    <div class="result-card highlight">
+      <div class="label">Daily (90% uptime)</div>
+      <div class="value" id="scenDaily">$0.00</div>
+      <div class="sub">21.6 h active</div>
+    </div>
+    <div class="result-card orange">
+      <div class="label">Monthly (90% uptime)</div>
+      <div class="value" id="scenMonthly">$0.00</div>
+      <div class="sub">30-day estimate</div>
+    </div>
+    <div class="result-card green">
+      <div class="label">Per Request</div>
+      <div class="value" id="scenPerReq">$0.00</div>
+      <div class="sub" id="scenPerReqTime">— s</div>
+    </div>
+    <div class="result-card">
+      <div class="label">Req / Day (sustained)</div>
+      <div class="value" id="scenReqDay">—</div>
+      <div class="sub">max requests in 21.6 h</div>
+    </div>
+  </div>
+</div>
+
 <details>
   <summary>How it works</summary>
   <div class="formula-block">
     <span class="fn">cost_per_hour</span> = (power_W / 1000) × energy_cost_$<br>
-    <span class="fn">request_time</span> = prompt_tokens / prompt_speed + output_tokens / decode_speed<br>
+    <span class="fn">uncached_tok</span> = prompt_tokens × (1 − cache_pct / 100)<br>
+    <span class="fn">cached_tok</span> = prompt_tokens × (cache_pct / 100)<br>
+    <span class="fn">prompt_time</span> = uncached_tok / prompt_speed + cached_tok / (prompt_speed × 100)<br>
+    <span class="fn">request_time</span> = prompt_time + output_tokens / decode_speed<br>
     <span class="fn">cost_per_request</span> = request_time / 3600 × (power_W / 1000) × energy_cost_$<br>
-    <span class="fn">cost_per_1M_input</span> = (1000000 / prompt_speed) / 3600 × (power_W / 1000) × energy_cost_$<br>
-    <span class="fn">cost_per_1M_output</span> = (1000000 / decode_speed) / 3600 × (power_W / 1000) × energy_cost_$<br>
+    <span class="fn">cost_per_1M_input</span> = (1M × (1−c) + 1M × c/100) / prompt_speed / 3600 × (power_W/1000) × energy<br>
     <span class="fn">daily_cost</span> = cost_per_request × requests_per_day<br>
-    <span class="fn">monthly_cost</span> = daily_cost × 30
+    <span class="fn">monthly_cost</span> = daily_cost × 30<br>
+    <span class="fn">scenario_daily</span> = (power_W / 1000) × energy_cost_$ × 24 × 0.9
   </div>
   <p class="note">
-    Assumes the PC draws a constant <strong>power_W</strong> while processing.
-    In reality, idle power is lower — this is a worst-case estimate for active inference time.
-    For a more accurate daily cost, multiply by the fraction of time the server is actually processing.
+    Cached tokens are processed at <strong>1/100</strong> the time of uncached tokens (KV-cache hit).
+    The realistic scenario assumes the PC draws full power for 90% of the day (21.6 h) —
+    a worst-case continuous-operation estimate.
   </p>
 </details>
 
@@ -228,6 +284,7 @@ details[open] summary { margin-bottom: 12px; }
     ['promptSpeed', 'promptSpeedNum'],
     ['decodeSpeed', 'decodeSpeedNum'],
     ['promptTokens', 'promptTokensNum'],
+    ['cachePct', 'cachePctNum'],
     ['outputTokens', 'outputTokensNum'],
     ['requestsPerDay', 'requestsPerDayNum']
   ];
@@ -242,7 +299,8 @@ details[open] summary { margin-bottom: 12px; }
     if (v < 0.001) return '$' + v.toFixed(6);
     if (v < 0.01) return '$' + v.toFixed(4);
     if (v < 1) return '$' + v.toFixed(3);
-    return '$' + v.toFixed(2);
+    if (v < 100) return '$' + v.toFixed(2);
+    return '$' + v.toFixed(0);
   }
 
   function fmtTime(s) {
@@ -253,31 +311,70 @@ details[open] summary { margin-bottom: 12px; }
     return m + 'm ' + rs.toFixed(0) + 's';
   }
 
+  function fmtNum(v) {
+    if (v >= 1000000) return (v / 1000000).toFixed(1) + 'M';
+    if (v >= 1000) return (v / 1000).toFixed(1) + 'k';
+    return v.toFixed(0);
+  }
+
   function calc() {
     var energy = getVal('energyCostNum');
     var power = getVal('pcPowerNum');
     var pSpeed = getVal('promptSpeedNum');
     var dSpeed = getVal('decodeSpeedNum');
     var pTok = getVal('promptTokensNum');
+    var cachePct = getVal('cachePctNum');
     var oTok = getVal('outputTokensNum');
     var reqDay = getVal('requestsPerDayNum');
 
+    var cacheFrac = cachePct / 100;
+    var uncachedTok = pTok * (1 - cacheFrac);
+    var cachedTok = pTok * cacheFrac;
+
     var costHour = (power / 1000) * energy;
-    var reqTime = (pTok / pSpeed) + (oTok / dSpeed);
+
+    // Prompt time: uncached at full speed, cached at 1/100 speed (100x faster)
+    var promptTime = (uncachedTok / pSpeed) + (cachedTok / (pSpeed * 100));
+    var decodeTime = oTok / dSpeed;
+    var reqTime = promptTime + decodeTime;
+
     var costReq = (reqTime / 3600) * (power / 1000) * energy;
-    var cost1MInput = (1000000 / pSpeed) / 3600 * (power / 1000) * energy;
+
+    // Per-1M with cache: effective time per token
+    var effTimePerTok = ((1 - cacheFrac) / pSpeed) + (cacheFrac / (pSpeed * 100));
+    var cost1MInput = (1000000 * effTimePerTok) / 3600 * (power / 1000) * energy;
     var cost1MOutput = (1000000 / dSpeed) / 3600 * (power / 1000) * energy;
+
     var daily = costReq * reqDay;
     var monthly = daily * 30;
 
     document.getElementById('resCostHour').textContent = fmtCost(costHour);
     document.getElementById('resCost1MInput').textContent = fmtCost(cost1MInput);
+    document.getElementById('resCost1MInputSub').textContent =
+      'per 1M input (' + cachePct + '% cached)';
     document.getElementById('resCost1MOutput').textContent = fmtCost(cost1MOutput);
     document.getElementById('resPerRequest').textContent = fmtCost(costReq);
     document.getElementById('resPerRequestTime').textContent = fmtTime(reqTime);
     document.getElementById('resDaily').textContent = fmtCost(daily);
-    document.getElementById('resDailySub').textContent = reqDay + ' requests/day';
+    document.getElementById('resDailySub').textContent = fmtNum(reqDay) + ' requests/day';
     document.getElementById('resMonthly').textContent = fmtCost(monthly);
+
+    // --- Realistic Scenario (fixed: 60k in, 50k cached, 2k out, 90% uptime) ---
+    var sPTok = 60000, sCached = 50000, sOTok = 2000;
+    var sUncached = sPTok - sCached;
+    var sPromptTime = (sUncached / pSpeed) + (sCached / (pSpeed * 100));
+    var sDecodeTime = sOTok / dSpeed;
+    var sReqTime = sPromptTime + sDecodeTime;
+    var sCostReq = (sReqTime / 3600) * (power / 1000) * energy;
+    var sDaily = (power / 1000) * energy * 24 * 0.9;
+    var sMonthly = sDaily * 30;
+    var sReqDay = Math.floor(21.6 * 3600 / sReqTime);
+
+    document.getElementById('scenDaily').textContent = fmtCost(sDaily);
+    document.getElementById('scenMonthly').textContent = fmtCost(sMonthly);
+    document.getElementById('scenPerReq').textContent = fmtCost(sCostReq);
+    document.getElementById('scenPerReqTime').textContent = fmtTime(sReqTime);
+    document.getElementById('scenReqDay').textContent = fmtNum(sReqDay);
   }
 
   // Sync slider <-> number input
