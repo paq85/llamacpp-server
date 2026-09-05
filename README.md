@@ -49,7 +49,7 @@ localhost:8081  ──►  llama-server (llama.cpp, CUDA)
 - keeps the large model files, toolchains, caches, and secrets out of Git
 - includes host-side helpers for `systemd` startup and NVIDIA power limiting
 - includes a lightweight **cost dashboard** (`cost_dashboard.py`) that reads the request/cost CSV logs and renders a self-contained web page with total cost, token statistics, cache hit ratio, and a daily cost chart
-- includes a self-contained **cost calculator** (`cost_calculator.html`) served at `/cost-calculator` for estimating per-1M-token, per-request, daily, and monthly electricity costs
+- includes a self-contained **cost calculator** (`cost_calculator.html`) served at `/cost-calculator` and published on [GitHub Pages](https://paq85.github.io/llamacpp-server/) for estimating per-1M-token, per-request, daily, and monthly electricity costs, with a GPT 5.6 Luna API comparison
 - is proven in production for commercial work and can be used **directly as the VS Code GitHub Copilot model backend**
 
 ## Cost dashboard
@@ -60,11 +60,21 @@ localhost:8081  ──►  llama-server (llama.cpp, CUDA)
 
 ## Cost calculator
 
-`cost_calculator.html` is a single self-contained HTML file (no external dependencies) served by the timeout proxy at `/cost-calculator`. It lets you estimate the electricity cost of running the model based on your hardware and usage patterns.
+`cost_calculator.html` is a single self-contained HTML file (no external dependencies) served by the timeout proxy at `/cost-calculator`, and also published on [GitHub Pages](https://paq85.github.io/llamacpp-server/). It's tuned for **Qwen 3.8 27B** — the closest local match to GPT 5.6 Luna in intelligence — so its presets and API comparison are calibrated for that model.
 
-Inputs: energy cost ($/kWh), PC power draw (W), prompt speed (tok/s), decode speed (tok/s), prompt tokens per request, output tokens per request, and requests per day.
+Inputs: energy cost ($/kWh), PC power draw (W), input speed (tok/s), output speed (tok/s), input per prompt (tokens), output per prompt (tokens), cache hit rate (%), and requests per day.
 
-Outputs: cost per hour, **cost per 1M input tokens**, **cost per 1M output tokens**, cost per request (with time), daily cost, and monthly cost.
+Outputs:
+
+- cost per hour (continuous operation)
+- **cost per 1M input** in three flavours — no cache, all cached (100× faster), and realistic (your cache hit rate)
+- **cost per 1M output**
+- cost per request (with time), daily cost, and monthly cost
+- a **realistic scenario** (60k input / 50k cached / 2k output, 90% uptime)
+- **power efficiency** in input/output tokens per kWh
+- a **GPT 5.6 Luna comparison** — per-request and monthly cost for three whole-PC presets (RTX 4070 Ti Super, RTX 5090, RTX 5090 eco-mode) plus your live config, with a bar chart and savings breakdown
+
+![Cost calculator](assets/cost-calculator.webp)
 
 A link to the calculator is available from the cost dashboard subtitle.
 
