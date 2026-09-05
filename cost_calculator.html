@@ -242,6 +242,16 @@ details[open] summary { margin-bottom: 12px; }
         <div class="value" id="resMonthly">$0.00</div>
         <div class="sub">30-day estimate</div>
       </div>
+      <div class="result-card green">
+        <div class="label">Input tok / kWh</div>
+        <div class="value" id="resTokKWhIn">—</div>
+        <div class="sub" id="resTokKWhInSub">with cache</div>
+      </div>
+      <div class="result-card green">
+        <div class="label">Output tok / kWh</div>
+        <div class="value" id="resTokKWhOut">—</div>
+        <div class="sub">decode only</div>
+      </div>
     </div>
   </div>
 </div>
@@ -274,6 +284,16 @@ details[open] summary { margin-bottom: 12px; }
       <div class="label">Req / Day (sustained)</div>
       <div class="value" id="scenReqDay">—</div>
       <div class="sub">max requests in 21.6 h</div>
+    </div>
+    <div class="result-card green">
+      <div class="label">Input tok / kWh</div>
+      <div class="value" id="scenTokKWhIn">—</div>
+      <div class="sub">83% cached (50k/60k)</div>
+    </div>
+    <div class="result-card green">
+      <div class="label">Output tok / kWh</div>
+      <div class="value" id="scenTokKWhOut">—</div>
+      <div class="sub">decode only</div>
     </div>
   </div>
 </div>
@@ -382,6 +402,13 @@ details[open] summary { margin-bottom: 12px; }
     document.getElementById('resDailySub').textContent = fmtNum(reqDay) + ' requests/day';
     document.getElementById('resMonthly').textContent = fmtCost(monthly);
 
+    // --- Tokens per kWh (efficiency) ---
+    var tokKWhIn = power > 0 ? 3600000 / (effTimePerTok * power) : 0;
+    var tokKWhOut = power > 0 ? 3600000 * dSpeed / power : 0;
+    document.getElementById('resTokKWhIn').textContent = fmtNum(tokKWhIn);
+    document.getElementById('resTokKWhInSub').textContent = cachePct + '% cached';
+    document.getElementById('resTokKWhOut').textContent = fmtNum(tokKWhOut);
+
     // --- Realistic Scenario (fixed: 60k in, 50k cached, 2k out, 90% uptime) ---
     var sPTok = 60000, sCached = 50000, sOTok = 2000;
     var sUncached = sPTok - sCached;
@@ -398,6 +425,14 @@ details[open] summary { margin-bottom: 12px; }
     document.getElementById('scenPerReq').textContent = fmtCost(sCostReq);
     document.getElementById('scenPerReqTime').textContent = fmtTime(sReqTime);
     document.getElementById('scenReqDay').textContent = fmtNum(sReqDay);
+
+    // Scenario tokens/kWh (fixed 50k/60k cache ratio)
+    var sCacheFrac = sCached / sPTok;
+    var sEffTimePerTok = ((1 - sCacheFrac) / pSpeed) + (sCacheFrac / (pSpeed * 100));
+    var sTokKWhIn = power > 0 ? 3600000 / (sEffTimePerTok * power) : 0;
+    var sTokKWhOut = power > 0 ? 3600000 * dSpeed / power : 0;
+    document.getElementById('scenTokKWhIn').textContent = fmtNum(sTokKWhIn);
+    document.getElementById('scenTokKWhOut').textContent = fmtNum(sTokKWhOut);
   }
 
   // Sync slider <-> number input
