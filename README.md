@@ -10,7 +10,7 @@ The headline problem this solves: when you route VS Code Copilot (or any OpenAI-
 
 > **Platform support.** This setup works well on **Linux (native)** and on **WSL2** (Windows Subsystem for Linux). On WSL2 the NVIDIA driver is supplied by the Windows host — see [Prerequisites](#prerequisites) and the WSL2 provisioning steps in [Quick start](#quick-start).
 
-![Production server — `nvtop` GPU monitoring of the running `llama-server`](assets/linux-monitoring.png)
+![Production server — `nvtop` GPU monitoring of the running `llama-server`](assets/linux-monitoring.webp)
 
 ## Architecture
 
@@ -55,7 +55,7 @@ localhost:8081  ──►  llama-server (llama.cpp, CUDA)
 
 `cost_dashboard.py` is a dependency-free (Python stdlib only) web app that turns the per-request cost CSV logs into a live dashboard. It reports total/today/7-day/30-day cost, input/cached/output token counts, cache hit ratio, current pricing settings, and a daily cost chart.
 
-![Cost dashboard](assets/cost-dashboard.png)
+![Cost dashboard](assets/cost-dashboard.webp)
 
 ## Using with VS Code GitHub Copilot
 
@@ -67,19 +67,19 @@ This setup is proven to work great in production for commercial work, and is som
 2. Add an **API key** with provider **OpenAI Compatible**: set the name, your API key, and the **Base API URL** (your public hostname ending in `/v1`, e.g. `https://your-llm-host.example/v1`).
 3. Add the model (e.g. `Qwen3.8-27B`) and configure its capabilities (tool calling, streaming, vision, thinking) and token limits.
 
-![GitHub AI Controls — custom model provider](assets/github-ai-provider-settings.png)
+![GitHub AI Controls — custom model provider](assets/github-ai-provider-settings.webp)
 
-![GitHub AI Controls — model configuration](assets/github-ai-model-settings.png)
+![GitHub AI Controls — model configuration](assets/github-ai-model-settings.webp)
 
 ### VS Code — pick the model
 
 Once registered, the model appears in the Copilot model picker in VS Code, ready to use:
 
-![VS Code Copilot model picker](assets/vscode-copilot-models-list.png)
+![VS Code Copilot model picker](assets/vscode-copilot-models-list.webp)
 
 And in action — the custom model selected in Agent mode, with the session context panel on the right:
 
-![VS Code Copilot chat using the custom model](assets/vscode-copilot.png)
+![VS Code Copilot chat using the custom model](assets/vscode-copilot.webp)
 
 ### Tool-result continuation nudge (VS Code Copilot compatibility)
 
