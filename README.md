@@ -49,6 +49,7 @@ localhost:8081  ──►  llama-server (llama.cpp, CUDA)
 - keeps the large model files, toolchains, caches, and secrets out of Git
 - includes host-side helpers for `systemd` startup and NVIDIA power limiting
 - includes a lightweight **cost dashboard** (`cost_dashboard.py`) that reads the request/cost CSV logs and renders a self-contained web page with total cost, token statistics, cache hit ratio, and a daily cost chart
+- includes a self-contained **cost calculator** (`cost_calculator.html`) served at `/cost-calculator` for estimating per-1M-token, per-request, daily, and monthly electricity costs
 - is proven in production for commercial work and can be used **directly as the VS Code GitHub Copilot model backend**
 
 ## Cost dashboard
@@ -56,6 +57,16 @@ localhost:8081  ──►  llama-server (llama.cpp, CUDA)
 `cost_dashboard.py` is a dependency-free (Python stdlib only) web app that turns the per-request cost CSV logs into a live dashboard. It reports total/today/7-day/30-day cost, input/cached/output token counts, cache hit ratio, current pricing settings, and a daily cost chart.
 
 ![Cost dashboard](assets/cost-dashboard.webp)
+
+## Cost calculator
+
+`cost_calculator.html` is a single self-contained HTML file (no external dependencies) served by the timeout proxy at `/cost-calculator`. It lets you estimate the electricity cost of running the model based on your hardware and usage patterns.
+
+Inputs: energy cost ($/kWh), PC power draw (W), prompt speed (tok/s), decode speed (tok/s), prompt tokens per request, output tokens per request, and requests per day.
+
+Outputs: cost per hour, **cost per 1M input tokens**, **cost per 1M output tokens**, cost per request (with time), daily cost, and monthly cost.
+
+A link to the calculator is available from the cost dashboard subtitle.
 
 ## Using with VS Code GitHub Copilot
 
@@ -199,6 +210,8 @@ The exact steps depend on your hardware and desktop environment, so treat this a
 ├── paq-llamacpp-server-base-meta/             # model metadata (config.json, tokenizer, etc.)
 ├── cloudflared.compose.yaml     # Cloudflare Tunnel connector container definition
 ├── cloudflare-timeout-proxy.py  # SSE keepalive timeout proxy (Python stdlib)
+├── cost_calculator.html         # self-contained cost calculator (served at /cost-calculator)
+├── cost_dashboard.py            # cost dashboard (served at /dashboard)
 ├── run-paq-llamacpp-server.sh                 # main launcher
 ├── stop-paq-llamacpp-server.sh                # stop the local server and optional tunnel connector
 ├── set-gpu-power-limit.sh       # GPU power cap helper

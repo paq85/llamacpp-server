@@ -174,14 +174,14 @@ details[open] summary { margin-bottom: 12px; }
         <div class="sub">continuous operation</div>
       </div>
       <div class="result-card">
-        <div class="label">Cost / 1K Prompt</div>
-        <div class="value" id="resCost1KPrompt">$0.00</div>
-        <div class="sub">processing 1000 input tokens</div>
+        <div class="label">Cost / 1M Input</div>
+        <div class="value" id="resCost1MInput">$0.00</div>
+        <div class="sub">per 1,000,000 input tokens</div>
       </div>
       <div class="result-card">
-        <div class="label">Cost / 1K Output</div>
-        <div class="value" id="resCost1KOutput">$0.00</div>
-        <div class="sub">generating 1000 output tokens</div>
+        <div class="label">Cost / 1M Output</div>
+        <div class="value" id="resCost1MOutput">$0.00</div>
+        <div class="sub">per 1,000,000 output tokens</div>
       </div>
       <div class="result-card green">
         <div class="label">Per Request</div>
@@ -208,8 +208,8 @@ details[open] summary { margin-bottom: 12px; }
     <span class="fn">cost_per_hour</span> = (power_W / 1000) × energy_cost_$<br>
     <span class="fn">request_time</span> = prompt_tokens / prompt_speed + output_tokens / decode_speed<br>
     <span class="fn">cost_per_request</span> = request_time / 3600 × (power_W / 1000) × energy_cost_$<br>
-    <span class="fn">cost_per_1K_prompt</span> = (1000 / prompt_speed) / 3600 × (power_W / 1000) × energy_cost_$<br>
-    <span class="fn">cost_per_1K_output</span> = (1000 / decode_speed) / 3600 × (power_W / 1000) × energy_cost_$<br>
+    <span class="fn">cost_per_1M_input</span> = (1000000 / prompt_speed) / 3600 × (power_W / 1000) × energy_cost_$<br>
+    <span class="fn">cost_per_1M_output</span> = (1000000 / decode_speed) / 3600 × (power_W / 1000) × energy_cost_$<br>
     <span class="fn">daily_cost</span> = cost_per_request × requests_per_day<br>
     <span class="fn">monthly_cost</span> = daily_cost × 30
   </div>
@@ -265,14 +265,14 @@ details[open] summary { margin-bottom: 12px; }
     var costHour = (power / 1000) * energy;
     var reqTime = (pTok / pSpeed) + (oTok / dSpeed);
     var costReq = (reqTime / 3600) * (power / 1000) * energy;
-    var cost1KPrompt = (1000 / pSpeed) / 3600 * (power / 1000) * energy;
-    var cost1KOutput = (1000 / dSpeed) / 3600 * (power / 1000) * energy;
+    var cost1MInput = (1000000 / pSpeed) / 3600 * (power / 1000) * energy;
+    var cost1MOutput = (1000000 / dSpeed) / 3600 * (power / 1000) * energy;
     var daily = costReq * reqDay;
     var monthly = daily * 30;
 
     document.getElementById('resCostHour').textContent = fmtCost(costHour);
-    document.getElementById('resCost1KPrompt').textContent = fmtCost(cost1KPrompt);
-    document.getElementById('resCost1KOutput').textContent = fmtCost(cost1KOutput);
+    document.getElementById('resCost1MInput').textContent = fmtCost(cost1MInput);
+    document.getElementById('resCost1MOutput').textContent = fmtCost(cost1MOutput);
     document.getElementById('resPerRequest').textContent = fmtCost(costReq);
     document.getElementById('resPerRequestTime').textContent = fmtTime(reqTime);
     document.getElementById('resDaily').textContent = fmtCost(daily);
