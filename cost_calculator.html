@@ -151,8 +151,8 @@ details[open] summary { margin-bottom: 12px; }
 </head>
 <body>
 
-<h1>⚡ Cost Calculator</h1>
-<div class="subtitle">Estimate electricity costs for running your local LLM server</div>
+<h1>⚡ Cost Calculator <span style="font-size: 0.9rem; color: var(--text2); font-weight: 400;">· tuned for Qwen 3.8 27B</span></h1>
+<div class="subtitle">Estimate electricity costs for running your local LLM server. Presets and the GPT 5.6 Luna comparison are calibrated for <strong>Qwen 3.8 27B</strong> — the closest local match to GPT 5.6 Luna in intelligence.</div>
 
 <div class="layout">
   <!-- Left: Inputs -->
@@ -189,23 +189,23 @@ details[open] summary { margin-bottom: 12px; }
     </div>
 
     <div class="input-row">
-      <label for="promptSpeed">Prompt speed</label>
+      <label for="promptSpeed">Input speed</label>
       <input type="range" id="promptSpeed" min="100" max="10000" step="50" value="1000">
-      <input type="number" id="promptSpeedNum" title="Prompt processing speed in tokens per second" min="10" max="50000" step="10" value="1000">
+      <input type="number" id="promptSpeedNum" title="Input (prompt) processing speed in tokens per second" min="10" max="50000" step="10" value="1000">
       <span class="unit">tok/s</span>
     </div>
 
     <div class="input-row">
-      <label for="decodeSpeed">Decode speed</label>
+      <label for="decodeSpeed">Output speed</label>
       <input type="range" id="decodeSpeed" min="1" max="200" step="1" value="50">
-      <input type="number" id="decodeSpeedNum" title="Decode speed in tokens per second" min="1" max="500" step="1" value="50">
+      <input type="number" id="decodeSpeedNum" title="Output (decode) speed in tokens per second" min="1" max="500" step="1" value="50">
       <span class="unit">tok/s</span>
     </div>
 
     <div class="input-row">
-      <label for="promptTokens">Prompt tokens</label>
+      <label for="promptTokens">Input per prompt</label>
       <input type="range" id="promptTokens" min="100" max="1000000" step="1000" value="60000">
-      <input type="number" id="promptTokensNum" title="Number of prompt tokens" min="10" max="1000000" step="100" value="60000">
+      <input type="number" id="promptTokensNum" title="Number of input (prompt) tokens per request" min="10" max="1000000" step="1000" value="60000">
       <span class="unit">tok</span>
     </div>
 
@@ -217,16 +217,16 @@ details[open] summary { margin-bottom: 12px; }
     </div>
 
     <div class="input-row">
-      <label for="outputTokens">Output tokens</label>
-      <input type="range" id="outputTokens" min="50" max="1000000" step="100" value="2000">
-      <input type="number" id="outputTokensNum" title="Number of output tokens" min="10" max="1000000" step="100" value="2000">
+      <label for="outputTokens">Output per prompt</label>
+      <input type="range" id="outputTokens" min="50" max="1000000" step="1000" value="2000">
+      <input type="number" id="outputTokensNum" title="Number of output tokens per request" min="10" max="1000000" step="1000" value="2000">
       <span class="unit">tok</span>
     </div>
 
     <div class="input-row">
       <label for="requestsPerDay">Requests / day</label>
-      <input type="range" id="requestsPerDay" min="1" max="50000" step="1" value="50">
-      <input type="number" id="requestsPerDayNum" title="Requests per day" min="1" max="50000" step="1" value="50">
+      <input type="range" id="requestsPerDay" min="1" max="50000" step="1000" value="1000">
+      <input type="number" id="requestsPerDayNum" title="Requests per day" min="1" max="50000" step="1000" value="1000">
       <span class="unit">req</span>
     </div>
   </div>
@@ -241,7 +241,17 @@ details[open] summary { margin-bottom: 12px; }
         <div class="sub">continuous operation</div>
       </div>
       <div class="result-card">
-        <div class="label">Cost / 1M Input</div>
+        <div class="label">Cost / 1M Input · no cache</div>
+        <div class="value" id="resCost1MInputNC">$0.00</div>
+        <div class="sub">0% cached</div>
+      </div>
+      <div class="result-card">
+        <div class="label">Cost / 1M Input · all cached</div>
+        <div class="value" id="resCost1MInputC">$0.00</div>
+        <div class="sub">100% cached (100× faster)</div>
+      </div>
+      <div class="result-card">
+        <div class="label">Cost / 1M Input · realistic</div>
         <div class="value" id="resCost1MInput">$0.00</div>
         <div class="sub" id="resCost1MInputSub">per 1M input tokens (with cache)</div>
       </div>
@@ -325,7 +335,8 @@ details[open] summary { margin-bottom: 12px; }
 <div class="scenario-section" style="margin-top: 20px;">
   <h2>📊 GPT 5.6 Luna Comparison</h2>
   <div class="scenario-desc">
-    Self-hosted profiles vs GPT 5.6 Luna API ($0.25/1M input, $0.02/1M cached, $1.20/1M output).
+    Self-hosted <strong>Qwen 3.8 27B</strong> profiles vs GPT 5.6 Luna API ($0.25/1M input, $0.02/1M cached, $1.20/1M output).
+    Qwen 3.8 27B is the closest local match to GPT 5.6 Luna in intelligence, so this is a fair like-for-like comparison.
     Scenario: 60k input (50k cached) + 2k output per request, 90% uptime (21.6 h/day).
   </div>
   <table class="compare-table">
@@ -446,12 +457,16 @@ details[open] summary { margin-bottom: 12px; }
     // Per-1M with cache: effective time per token
     var effTimePerTok = ((1 - cacheFrac) / pSpeed) + (cacheFrac / (pSpeed * 100));
     var cost1MInput = (1000000 * effTimePerTok) / 3600 * (power / 1000) * energy;
+    var cost1MInputNC = (1000000 / pSpeed) / 3600 * (power / 1000) * energy;
+    var cost1MInputC = (1000000 / (pSpeed * 100)) / 3600 * (power / 1000) * energy;
     var cost1MOutput = (1000000 / dSpeed) / 3600 * (power / 1000) * energy;
 
     var daily = costReq * reqDay;
     var monthly = daily * 30;
 
     document.getElementById('resCostHour').textContent = fmtCost(costHour);
+    document.getElementById('resCost1MInputNC').textContent = fmtCost(cost1MInputNC);
+    document.getElementById('resCost1MInputC').textContent = fmtCost(cost1MInputC);
     document.getElementById('resCost1MInput').textContent = fmtCost(cost1MInput);
     document.getElementById('resCost1MInputSub').textContent =
       'per 1M input (' + cachePct + '% cached)';
