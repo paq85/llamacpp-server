@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cost Calculator — PAQ_LLAMACPP_SERVER</title>
+<style>
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
+  --text: #e6edf3; --text2: #8b949e; --accent: #58a6ff;
+  --green: #3fb950; --orange: #d29922; --red: #f85149;
+  --border: #30363d;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: var(--bg); color: var(--text); padding: 20px;
+  max-width: 1200px; margin: 0 auto;
+}
+h1 { font-size: 1.6rem; margin-bottom: 6px; }
+h2 { font-size: 1.1rem; margin-bottom: 12px; color: var(--text2); }
+.subtitle { color: var(--text2); font-size: 0.85rem; margin-bottom: 24px; }
+.layout {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+}
+.panel {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 20px;
+}
+.panel h2 { margin-bottom: 16px; }
+.input-row {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+}
+.input-row label {
+  flex: 0 0 140px; font-size: 0.8rem; color: var(--text2);
+}
+.input-row input[type="range"] {
+  flex: 1; height: 6px; -webkit-appearance: none; appearance: none;
+  background: var(--bg3); border-radius: 3px; outline: none;
+}
+.input-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); cursor: pointer;
+}
+.input-row input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; border: none;
+}
+.input-row input[type="number"] {
+  flex: 0 0 80px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text); padding: 4px 8px;
+  font-size: 0.85rem; text-align: right;
+}
+.input-row input[type="number"]:focus {
+  outline: none; border-color: var(--accent);
+}
+.input-row .unit {
+  flex: 0 0 50px; font-size: 0.75rem; color: var(--text2);
+}
+.results-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.result-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 14px;
+}
+.result-card .label {
+  font-size: 0.72rem; color: var(--text2); text-transform: uppercase;
+  letter-spacing: 0.05em; margin-bottom: 4px;
+}
+.result-card .value {
+  font-size: 1.4rem; font-weight: 700;
+}
+.result-card .sub {
+  font-size: 0.75rem; color: var(--text2); margin-top: 2px;
+}
+.result-card.highlight .value { color: var(--accent); }
+.result-card.green .value { color: var(--green); }
+.result-card.orange .value { color: var(--orange); }
+details {
+  margin-top: 20px; background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px;
+}
+details summary {
+  cursor: pointer; font-size: 0.9rem; color: var(--accent);
+  font-weight: 600;
+}
+details summary:hover { text-decoration: underline; }
+details[open] summary { margin-bottom: 12px; }
+.formula-block {
+  font-family: 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 0.8rem; color: var(--text2); line-height: 1.8;
+  padding: 12px; background: var(--bg); border-radius: 4px;
+  margin-top: 8px;
+}
+.formula-block .fn { color: var(--accent); }
+.formula-block .fv { color: var(--green); }
+.note { margin-top: 10px; font-size: 0.8rem; color: var(--text2); }
+@media (max-width: 800px) {
+  .layout { grid-template-columns: 1fr; }
+  .input-row label { flex: 0 0 100px; }
+}
+</style>
+</head>
+<body>
+
+<h1>⚡ Cost Calculator</h1>
+<div class="subtitle">Estimate electricity costs for running your local LLM server</div>
+
+<div class="layout">
+  <!-- Left: Inputs -->
+  <div class="panel">
+    <h2>Parameters</h2>
+
+    <div class="input-row">
+      <label for="energyCost">Energy cost</label>
+      <input type="range" id="energyCost" min="0.05" max="1.00" step="0.01" value="0.30">
+      <input type="number" id="energyCostNum" title="Energy cost in dollars per kWh" min="0.01" max="5" step="0.01" value="0.30">
+      <span class="unit">$/kWh</span>
+    </div>
+
+    <div class="input-row">
+      <label for="pcPower">PC power draw</label>
+      <input type="range" id="pcPower" min="50" max="2000" step="10" value="500">
+      <input type="number" id="pcPowerNum" title="PC power draw in watts" min="10" max="5000" step="10" value="500">
+      <span class="unit">W</span>
+    </div>
+
+    <div class="input-row">
+      <label for="promptSpeed">Prompt speed</label>
+      <input type="range" id="promptSpeed" min="100" max="10000" step="50" value="1000">
+      <input type="number" id="promptSpeedNum" title="Prompt processing speed in tokens per second" min="10" max="50000" step="10" value="1000">
+      <span class="unit">tok/s</span>
+    </div>
+
+    <div class="input-row">
+      <label for="decodeSpeed">Decode speed</label>
+      <input type="range" id="decodeSpeed" min="1" max="200" step="1" value="50">
+      <input type="number" id="decodeSpeedNum" title="Decode speed in tokens per second" min="1" max="500" step="1" value="50">
+      <span class="unit">tok/s</span>
+    </div>
+
+    <div class="input-row">
+      <label for="promptTokens">Prompt tokens</label>
+      <input type="range" id="promptTokens" min="100" max="20000" step="100" value="4000">
+      <input type="number" id="promptTokensNum" title="Number of prompt tokens" min="10" max="100000" step="10" value="4000">
+      <span class="unit">tok</span>
+    </div>
+
+    <div class="input-row">
+      <label for="outputTokens">Output tokens</label>
+      <input type="range" id="outputTokens" min="50" max="10000" step="50" value="2000">
+      <input type="number" id="outputTokensNum" title="Number of output tokens" min="10" max="50000" step="10" value="2000">
+      <span class="unit">tok</span>
+    </div>
+
+    <div class="input-row">
+      <label for="requestsPerDay">Requests / day</label>
+      <input type="range" id="requestsPerDay" min="1" max="500" step="1" value="50">
+      <input type="number" id="requestsPerDayNum" title="Requests per day" min="1" max="10000" step="1" value="50">
+      <span class="unit">req</span>
+    </div>
+  </div>
+
+  <!-- Right: Results -->
+  <div class="panel">
+    <h2>Results</h2>
+    <div class="results-grid">
+      <div class="result-card highlight">
+        <div class="label">Cost / Hour</div>
+        <div class="value" id="resCostHour">$0.00</div>
+        <div class="sub">continuous operation</div>
+      </div>
+      <div class="result-card">
+        <div class="label">Cost / 1K Prompt</div>
+        <div class="value" id="resCost1KPrompt">$0.00</div>
+        <div class="sub">processing 1000 input tokens</div>
+      </div>
+      <div class="result-card">
+        <div class="label">Cost / 1K Output</div>
+        <div class="value" id="resCost1KOutput">$0.00</div>
+        <div class="sub">generating 1000 output tokens</div>
+      </div>
+      <div class="result-card green">
+        <div class="label">Per Request</div>
+        <div class="value" id="resPerRequest">$0.00</div>
+        <div class="sub" id="resPerRequestTime">— s</div>
+      </div>
+      <div class="result-card orange">
+        <div class="label">Daily Cost</div>
+        <div class="value" id="resDaily">$0.00</div>
+        <div class="sub" id="resDailySub">— requests</div>
+      </div>
+      <div class="result-card">
+        <div class="label">Monthly Cost</div>
+        <div class="value" id="resMonthly">$0.00</div>
+        <div class="sub">30-day estimate</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<details>
+  <summary>How it works</summary>
+  <div class="formula-block">
+    <span class="fn">cost_per_hour</span> = (power_W / 1000) × energy_cost_$<br>
+    <span class="fn">request_time</span> = prompt_tokens / prompt_speed + output_tokens / decode_speed<br>
+    <span class="fn">cost_per_request</span> = request_time / 3600 × (power_W / 1000) × energy_cost_$<br>
+    <span class="fn">cost_per_1K_prompt</span> = (1000 / prompt_speed) / 3600 × (power_W / 1000) × energy_cost_$<br>
+    <span class="fn">cost_per_1K_output</span> = (1000 / decode_speed) / 3600 × (power_W / 1000) × energy_cost_$<br>
+    <span class="fn">daily_cost</span> = cost_per_request × requests_per_day<br>
+    <span class="fn">monthly_cost</span> = daily_cost × 30
+  </div>
+  <p class="note">
+    Assumes the PC draws a constant <strong>power_W</strong> while processing.
+    In reality, idle power is lower — this is a worst-case estimate for active inference time.
+    For a more accurate daily cost, multiply by the fraction of time the server is actually processing.
+  </p>
+</details>
+
+<script>
+(function() {
+  var pairs = [
+    ['energyCost', 'energyCostNum'],
+    ['pcPower', 'pcPowerNum'],
+    ['promptSpeed', 'promptSpeedNum'],
+    ['decodeSpeed', 'decodeSpeedNum'],
+    ['promptTokens', 'promptTokensNum'],
+    ['outputTokens', 'outputTokensNum'],
+    ['requestsPerDay', 'requestsPerDayNum']
+  ];
+
+  function getVal(id) {
+    var el = document.getElementById(id);
+    return parseFloat(el.value) || 0;
+  }
+
+  function fmtCost(v) {
+    if (v === 0) return '$0.00';
+    if (v < 0.001) return '$' + v.toFixed(6);
+    if (v < 0.01) return '$' + v.toFixed(4);
+    if (v < 1) return '$' + v.toFixed(3);
+    return '$' + v.toFixed(2);
+  }
+
+  function fmtTime(s) {
+    if (s < 1) return s.toFixed(2) + ' s';
+    if (s < 60) return s.toFixed(1) + ' s';
+    var m = Math.floor(s / 60);
+    var rs = s % 60;
+    return m + 'm ' + rs.toFixed(0) + 's';
+  }
+
+  function calc() {
+    var energy = getVal('energyCostNum');
+    var power = getVal('pcPowerNum');
+    var pSpeed = getVal('promptSpeedNum');
+    var dSpeed = getVal('decodeSpeedNum');
+    var pTok = getVal('promptTokensNum');
+    var oTok = getVal('outputTokensNum');
+    var reqDay = getVal('requestsPerDayNum');
+
+    var costHour = (power / 1000) * energy;
+    var reqTime = (pTok / pSpeed) + (oTok / dSpeed);
+    var costReq = (reqTime / 3600) * (power / 1000) * energy;
+    var cost1KPrompt = (1000 / pSpeed) / 3600 * (power / 1000) * energy;
+    var cost1KOutput = (1000 / dSpeed) / 3600 * (power / 1000) * energy;
+    var daily = costReq * reqDay;
+    var monthly = daily * 30;
+
+    document.getElementById('resCostHour').textContent = fmtCost(costHour);
+    document.getElementById('resCost1KPrompt').textContent = fmtCost(cost1KPrompt);
+    document.getElementById('resCost1KOutput').textContent = fmtCost(cost1KOutput);
+    document.getElementById('resPerRequest').textContent = fmtCost(costReq);
+    document.getElementById('resPerRequestTime').textContent = fmtTime(reqTime);
+    document.getElementById('resDaily').textContent = fmtCost(daily);
+    document.getElementById('resDailySub').textContent = reqDay + ' requests/day';
+    document.getElementById('resMonthly').textContent = fmtCost(monthly);
+  }
+
+  // Sync slider <-> number input
+  pairs.forEach(function(pair) {
+    var slider = document.getElementById(pair[0]);
+    var num = document.getElementById(pair[1]);
+    slider.addEventListener('input', function() {
+      num.value = slider.value;
+      calc();
+    });
+    num.addEventListener('input', function() {
+      slider.value = num.value;
+      calc();
+    });
+  });
+
+  calc();
+})();
+</script>
+
+</body>
+</html>

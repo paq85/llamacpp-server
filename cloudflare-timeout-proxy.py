@@ -1377,6 +1377,10 @@ class TimeoutProxyHandler(BaseHTTPRequestHandler):
         if self.command == "GET" and self.path.split("?", 1)[0] == "/dashboard":
             self._serve_dashboard()
             return
+        # Serve cost calculator (static HTML, no auth).
+        if self.command == "GET" and self.path.split("?", 1)[0] == "/cost-calculator":
+            self._serve_cost_calculator()
+            return
         body = self._read_body()
 
         # Optional: capture raw inference request bodies for offline replay.
@@ -1514,6 +1518,33 @@ class TimeoutProxyHandler(BaseHTTPRequestHandler):
         self.wfile.flush()
         self.close_connection = True
 
+    def _serve_cost_calculator(self) -> None:
+        """Serve the cost calculator at GET /cost-calculator."""
+        html_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "cost_calculator.html",
+        )
+        if not os.path.exists(html_path):
+            body = b'{"error": "cost calculator not found"}'
+            self.send_response(404)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Connection", "close")
+            self.end_headers()
+            self.wfile.write(body)
+            self.wfile.flush()
+            self.close_connection = True
+            return
+        with open(html_path, "rb") as fh:
+            html_bytes = fh.read()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(html_bytes)))
+        self.send_header("Connection", "close")
+        self.end_headers()
+        self.wfile.write(html_bytes)
+        self.wfile.flush()
+        self.close_connection = True
 
     def _read_body(self) -> bytes:
         raw_length = self.headers.get("Content-Length", "")

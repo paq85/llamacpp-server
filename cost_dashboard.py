@@ -361,7 +361,7 @@ def _build_full_html(model_name, ga_display, overview_cards, token_stats, pricin
 <body>
 
   <h1>""" + model_name + """ — Cost Dashboard</h1>
-<div class="subtitle">Last updated: """ + ga_display + """</div>
+<div class="subtitle">Last updated: """ + ga_display + """ · <a href="/cost-calculator" style="color:var(--accent);text-decoration:none;">⚡ Cost Calculator</a></div>
 
 """ + overview_cards + """
 """ + token_stats + """
