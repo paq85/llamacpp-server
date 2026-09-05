@@ -128,6 +128,25 @@ details[open] summary { margin-bottom: 12px; }
 .preset-btn:hover { border-color: var(--accent); background: var(--bg); }
 .preset-btn .gpu-name { font-weight: 600; }
 .preset-btn .gpu-specs { color: var(--text2); font-size: 0.7rem; }
+.compare-table {
+  width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 12px 0;
+}
+.compare-table th, .compare-table td {
+  padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--border);
+}
+.compare-table th {
+  color: var(--text2); font-weight: 600; font-size: 0.72rem; text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.compare-table th:first-child, .compare-table td:first-child { text-align: left; }
+.compare-table tr:hover td { background: var(--bg3); }
+.compare-table .savings-positive { color: var(--green); }
+.compare-table .savings-negative { color: var(--red); }
+.chart-container {
+  margin: 16px 0; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px; overflow-x: auto;
+}
+.chart-container canvas { display: block; margin: 0 auto; }
 </style>
 </head>
 <body>
@@ -150,7 +169,7 @@ details[open] summary { margin-bottom: 12px; }
         <span class="gpu-specs">900W · 2500/120 tok/s</span>
       </button>
       <button class="preset-btn" id="preset5090pl">
-        <span class="gpu-name">PC with RTX 5090 (400W power limit)</span><br>
+        <span class="gpu-name">PC with RTX 5090 (eco-mode)</span><br>
         <span class="gpu-specs">650W · 2000/100 tok/s</span>
       </button>
     </div>
@@ -302,6 +321,43 @@ details[open] summary { margin-bottom: 12px; }
   </div>
 </div>
 
+<!-- GPT 5.6 Luna Comparison -->
+<div class="scenario-section" style="margin-top: 20px;">
+  <h2>📊 GPT 5.6 Luna Comparison</h2>
+  <div class="scenario-desc">
+    Self-hosted profiles vs GPT 5.6 Luna API ($0.25/1M input, $0.02/1M cached, $1.20/1M output).
+    Scenario: 60k input (50k cached) + 2k output per request, 90% uptime (21.6 h/day).
+  </div>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Profile</th>
+        <th>Power</th>
+        <th>Speed</th>
+        <th>Per Request</th>
+        <th>Monthly (self)</th>
+        <th>Monthly (GPT)</th>
+        <th>Savings</th>
+      </tr>
+    </thead>
+    <tbody id="compareTableBody"></tbody>
+  </table>
+  <div class="chart-container">
+    <canvas id="costChart" width="640" height="260"></canvas>
+  </div>
+  <h3 style="margin-top: 16px; font-size: 0.9rem; color: var(--text);">⚡ Power Efficiency</h3>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Profile</th>
+        <th>Input tok/kWh</th>
+        <th>Output tok/kWh</th>
+      </tr>
+    </thead>
+    <tbody id="effTableBody"></tbody>
+  </table>
+</div>
+
 <details>
   <summary>How it works</summary>
   <div class="formula-block">
@@ -437,6 +493,138 @@ details[open] summary { margin-bottom: 12px; }
     var sTokKWhOut = power > 0 ? 3600000 * dSpeed / power : 0;
     document.getElementById('scenTokKWhIn').textContent = fmtNum(sTokKWhIn);
     document.getElementById('scenTokKWhOut').textContent = fmtNum(sTokKWhOut);
+
+    updateComparison(energy);
+  }
+
+  // --- GPT 5.6 Luna Comparison ---
+  var gptInPrice = 0.25, gptCachedPrice = 0.02, gptOutPrice = 1.20;
+  var cmpPTok = 60000, cmpCached = 50000, cmpOTok = 2000;
+  var cmpUncached = cmpPTok - cmpCached;
+  var gptPerReq = (cmpUncached / 1e6) * gptInPrice + (cmpCached / 1e6) * gptCachedPrice + (cmpOTok / 1e6) * gptOutPrice;
+
+  var presetProfiles = [
+    { name: 'RTX 4070 Ti Super', power: 500, pSpeed: 1000, dSpeed: 50 },
+    { name: 'RTX 5090', power: 900, pSpeed: 2500, dSpeed: 120 },
+    { name: 'RTX 5090 eco', power: 650, pSpeed: 2000, dSpeed: 100 }
+  ];
+
+  function calcProfile(p, energy) {
+    var sPromptTime = (cmpUncached / p.pSpeed) + (cmpCached / (p.pSpeed * 100));
+    var sDecodeTime = cmpOTok / p.dSpeed;
+    var sReqTime = sPromptTime + sDecodeTime;
+    var perReq = (sReqTime / 3600) * (p.power / 1000) * energy;
+    var monthly = (p.power / 1000) * energy * 24 * 0.9 * 30;
+    var reqDay = Math.floor(21.6 * 3600 / sReqTime);
+    var gptMonthly = reqDay * gptPerReq * 30;
+    var sCacheFrac = cmpCached / cmpPTok;
+    var sEffTimePerTok = ((1 - sCacheFrac) / p.pSpeed) + (sCacheFrac / (p.pSpeed * 100));
+    var tokKWhIn = p.power > 0 ? 3600000 / (sEffTimePerTok * p.power) : 0;
+    var tokKWhOut = p.power > 0 ? 3600000 * p.dSpeed / p.power : 0;
+    return { name: p.name, power: p.power, pSpeed: p.pSpeed, dSpeed: p.dSpeed,
+      perReq: perReq, monthly: monthly, reqDay: reqDay, gptMonthly: gptMonthly,
+      tokKWhIn: tokKWhIn, tokKWhOut: tokKWhOut };
+  }
+
+  function updateComparison(energy) {
+    var profiles = presetProfiles.map(function(p) { return calcProfile(p, energy); });
+    profiles.push(calcProfile({
+      name: 'Your config',
+      power: getVal('pcPowerNum'),
+      pSpeed: getVal('promptSpeedNum'),
+      dSpeed: getVal('decodeSpeedNum')
+    }, energy));
+
+    var tbody = document.getElementById('compareTableBody');
+    var html = '';
+    profiles.forEach(function(p) {
+      var savings = p.gptMonthly - p.monthly;
+      var savingsPct = p.gptMonthly > 0 ? (savings / p.gptMonthly * 100) : 0;
+      var cls = savings >= 0 ? 'savings-positive' : 'savings-negative';
+      var sign = savings >= 0 ? '+' : '';
+      html += '<tr><td>' + p.name + '</td><td>' + p.power + 'W</td><td>' +
+        p.pSpeed + '/' + p.dSpeed + '</td><td>' + fmtCost(p.perReq) + '</td><td>' +
+        fmtCost(p.monthly) + '</td><td>' + fmtCost(p.gptMonthly) + '</td><td class="' +
+        cls + '">' + sign + fmtCost(savings) + ' (' + savingsPct.toFixed(0) + '%)</td></tr>';
+    });
+    tbody.innerHTML = html;
+
+    var effTbody = document.getElementById('effTableBody');
+    var effHtml = '';
+    profiles.forEach(function(p) {
+      effHtml += '<tr><td>' + p.name + '</td><td>' + fmtNum(p.tokKWhIn) +
+        '</td><td>' + fmtNum(p.tokKWhOut) + '</td></tr>';
+    });
+    effTbody.innerHTML = effHtml;
+
+    drawCostChart(profiles);
+  }
+
+  function drawCostChart(profiles) {
+    var canvas = document.getElementById('costChart');
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    var pad = { top: 30, right: 20, bottom: 50, left: 60 };
+    var chartW = W - pad.left - pad.right;
+    var chartH = H - pad.top - pad.bottom;
+    ctx.clearRect(0, 0, W, H);
+
+    var maxVal = 0;
+    profiles.forEach(function(p) {
+      maxVal = Math.max(maxVal, p.monthly, p.gptMonthly);
+    });
+    maxVal = maxVal * 1.15 || 1;
+
+    ctx.strokeStyle = '#30363d';
+    ctx.lineWidth = 1;
+    var numGrid = 5;
+    for (var i = 0; i <= numGrid; i++) {
+      var y = pad.top + chartH - (i / numGrid) * chartH;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, y);
+      ctx.lineTo(W - pad.right, y);
+      ctx.stroke();
+      var val = (i / numGrid) * maxVal;
+      ctx.fillStyle = '#8b949e';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('$' + val.toFixed(0), pad.left - 8, y + 4);
+    }
+
+    var n = profiles.length;
+    var groupW = chartW / n;
+    var barW = groupW * 0.3;
+    var gap = groupW * 0.05;
+    var cSelf = '#58a6ff', cGpt = '#d29922';
+
+    profiles.forEach(function(p, i) {
+      var gx = pad.left + i * groupW + groupW / 2;
+      var selfH = (p.monthly / maxVal) * chartH;
+      ctx.fillStyle = cSelf;
+      ctx.fillRect(gx - barW - gap / 2, pad.top + chartH - selfH, barW, selfH);
+      var gptH = (p.gptMonthly / maxVal) * chartH;
+      ctx.fillStyle = cGpt;
+      ctx.fillRect(gx + gap / 2, pad.top + chartH - gptH, barW, gptH);
+      ctx.fillStyle = '#e6edf3';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.name, gx, H - pad.bottom + 16);
+      ctx.fillStyle = '#8b949e';
+      ctx.font = '10px sans-serif';
+      ctx.fillText(p.power + 'W', gx, H - pad.bottom + 30);
+    });
+
+    var ly = 12;
+    ctx.fillStyle = cSelf;
+    ctx.fillRect(W - pad.right - 180, ly, 12, 12);
+    ctx.fillStyle = '#e6edf3';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Self-hosted', W - pad.right - 164, ly + 10);
+    ctx.fillStyle = cGpt;
+    ctx.fillRect(W - pad.right - 80, ly, 12, 12);
+    ctx.fillStyle = '#e6edf3';
+    ctx.fillText('GPT 5.6 Luna', W - pad.right - 64, ly + 10);
   }
 
   // Sync slider <-> number input
