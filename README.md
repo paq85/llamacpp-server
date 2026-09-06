@@ -182,6 +182,8 @@ Both profiles use the froggeric v22.1 chat template (`chat_templates/chat_templa
 
 > **Tuned for occasional vision analysis.** These profiles are tuned for **rare / occasional vision (image) analysis**, not for heavy continuous multimodal workloads. The vision projector (`mmproj`) is **not GPU-offloaded** — it runs on the CPU — so image-heavy requests are slower than pure-text inference. For the intended use (mostly text, with the occasional screenshot or image), this is a good trade-off: it keeps the full GPU dedicated to the LLM weights and KV cache. If you need fast, frequent vision, look into offloading the mmproj to the GPU and re-tuning the profile.
 
+> **Thinking loops?** If the model gets stuck in repetitive reasoning loops, try the Bartowski quantization variants — see [QWEN38_RELIABILITY_GUIDE.md §10](docs/QWEN38_RELIABILITY_GUIDE.md).
+
 ## Freeing all dGPU VRAM for the LLM (use the iGPU for display)
 
 On a desktop with **both** an integrated GPU (Intel/AMD iGPU) and a dedicated NVIDIA GPU (dGPU), the display output can be routed through the **iGPU** so the **dGPU is used purely for compute**. This frees **100% of the dGPU's VRAM** for the LLM (weights + KV cache), because the dGPU no longer has to reserve memory for the framebuffer/display.

@@ -269,3 +269,31 @@ If reliability regresses, avoid jumping immediately to high-risk changes like:
 - aggressive sampling increases
 
 Start by preserving the baseline above and adjusting only one variable at a time with capture replay.
+
+---
+
+## 10) Thinking loop mitigation — alternative quantization
+
+### Symptom
+
+The model gets stuck in repetitive reasoning/thinking loops: it emits long `think` blocks without producing tool calls or visible assistant content, effectively spinning in place. This is a known failure mode that can appear intermittently with certain quantization variants.
+
+### Mitigation
+
+Switch to the **Bartowski** quantization variants, which have been observed to reduce thinking-loop frequency:
+
+| VRAM | Bartowski file | Source |
+|------|---------------|--------|
+| 16 GB | `Qwen3.8-27B-Q2_K_L.gguf` | [bartowski/Qwen3.8-27B-GGUF](https://huggingface.co/bartowski/Qwen3.8-27B-GGUF) |
+| 32 GB | `Qwen3.8-27B-Q5_K_M.gguf` | [bartowski/Qwen3.8-27B-GGUF](https://huggingface.co/bartowski/Qwen3.8-27B-GGUF) |
+
+### How to apply
+
+1. Download the appropriate `.gguf` file into `models/`.
+2. Update the `MODEL=` line in the relevant `dot.env.*` profile file (or create a new profile file).
+3. The mmproj file (`mmproj-qwen38-27b-F16.gguf`) remains the same — no change needed.
+4. Switch to the updated profile:
+   ```
+   sudo bash scripts/switch-model.sh qwen38-16gb   # or qwen38-32gb
+   ```
+5. Validate with the reliability checklist (§8) before declaring the fix.
